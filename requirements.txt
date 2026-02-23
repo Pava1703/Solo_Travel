@@ -1,0 +1,17 @@
+# Minimal Requirements - Guaranteed to Work
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+transformers
+torch
+spacy
+nltk
+flask
+flask-cors
+requests
+beautifulsoup4
+plotly
+python-dotenv
+tqdm

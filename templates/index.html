@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solo Travel AI - Real Data Recommendations</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .preference-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .preference-section h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+
+        .slider-container {
+            margin-bottom: 25px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .slider-label span:last-child {
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        .get-recommendations-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+        }
+
+        .get-recommendations-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .get-recommendations-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .results-section {
+            margin-top: 30px;
+        }
+
+        .traveler-type {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .traveler-type h3 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .city-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .city-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .city-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .city-name {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .overall-score {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .aspect-scores {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .aspect-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .aspect-name {
+            font-weight: 600;
+            color: #555;
+            text-transform: capitalize;
+        }
+
+        .aspect-score {
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .recommendations-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [preferences, setPreferences] = useState({
+                safety: 3.5,
+                cost: 3.5,
+                social: 3.5,
+                comfort: 3.5
+            });
+            
+            const [cityData, setCityData] = useState([]);
+            const [recommendations, setRecommendations] = useState([]);
+            const [travelerType, setTravelerType] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
+            const [dataLoaded, setDataLoaded] = useState(false);
+
+            // Load real CSV data on component mount
+            useEffect(() => {
+                loadCityData();
+            }, []);
+
+            const loadCityData = async () => {
+                try {
+                    // Try to load from Flask API
+                    const response = await fetch('http://localhost:5000/api/cities');
+                    
+                    if (!response.ok) {
+                        throw new Error('Backend not responding. Make sure Flask server is running (python app.py)');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success && data.cities) {
+                        console.log('Loaded city data from API:', data.cities);
+                        setCityData(data.cities);
+                        setDataLoaded(true);
+                    } else {
+                        throw new Error('Invalid data format from API');
+                    }
+                } catch (err) {
+                    console.error('Error loading data:', err);
+                    setError('Failed to load city data. Make sure Flask server is running: python app.py');
+                }
+            };
+
+            const handleSliderChange = (aspect, value) => {
+                setPreferences(prev => ({
+                    ...prev,
+                    [aspect]: parseFloat(value)
+                }));
+            };
+
+            const getRecommendations = async () => {
+                if (!dataLoaded || cityData.length === 0) {
+                    setError('City data not loaded yet. Please wait...');
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+                
+                try {
+                    // Call Flask API for recommendations
+                    const response = await fetch('http://localhost:5000/api/recommend', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(preferences)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to get recommendations from server');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setRecommendations(data.recommendations);
+                        setTravelerType(data.traveler_type);
+                    } else {
+                        throw new Error(data.error || 'Unknown error');
+                    }
+                    
+                } catch (err) {
+                    console.error('Error:', err);
+                    
+                    // Fallback: calculate locally if API fails
+                    console.log('Using local calculation as fallback...');
+                    
+                    const scored = cityData.map(city => {
+                        const comfort = parseFloat(city.comfort || city.Comfort) || 3.5;
+                        const cost = parseFloat(city.cost || city.Cost) || 3.5;
+                        const safety = parseFloat(city.safety || city.Safety) || 3.5;
+                        const social = parseFloat(city.social || city.Social) || 3.5;
+
+                        const totalWeight = preferences.safety + preferences.cost + preferences.social + preferences.comfort;
+                        const score = (
+                            safety * preferences.safety +
+                            cost * preferences.cost +
+                            social * preferences.social +
+                            comfort * preferences.comfort
+                        ) / totalWeight;
+
+                        return {
+                            city: city.name || city.city,
+                            overall_score: score,
+                            safety_score: safety,
+                            cost_score: cost,
+                            social_score: social,
+                            comfort_score: comfort
+                        };
+                    });
+
+                    scored.sort((a, b) => b.overall_score - a.overall_score);
+
+                    // FIXED: Correct traveler type detection
+                    const prefs = [
+                        { name: 'Safety-First Planner', value: preferences.safety, key: 'safety' },
+                        { name: 'Budget Explorer', value: preferences.cost, key: 'cost' },
+                        { name: 'Social Butterfly', value: preferences.social, key: 'social' },
+                        { name: 'Comfort Seeker', value: preferences.comfort, key: 'comfort' }
+                    ];
+                    
+                    // Sort by value descending
+                    prefs.sort((a, b) => b.value - a.value);
+                    
+                    // If top preference is >= 4.0, use it; otherwise Balanced
+                    let type = 'Balanced Traveler';
+                    if (prefs[0].value >= 4.0) {
+                        type = prefs[0].name;
+                    } else if (Math.abs(prefs[0].value - prefs[1].value) < 0.5) {
+                        // If values are close, it's balanced
+                        type = 'Balanced Traveler';
+                    }
+
+                    setRecommendations(scored);
+                    setTravelerType(type);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>🌍 Solo Travel AI</h1>
+                        <p>AI-Driven Personalized Destination Recommendations</p>
+                        <div className="badge">
+                            ✅ Using Real Data from {cityData.length} Cities
+                        </div>
+                    </div>
+
+                    <div className="content">
+                        <div className="preference-section">
+                            <h2>Set Your Travel Preferences</h2>
+                            
+                            <div className="slider-container">
+                                <div className="slider-label">
+                                    <span>🛡️ Safety Importance</span>
+                                    <span>{preferences.safety.toFixed(1)}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={preferences.safety}
+                                    onChange={(e) => handleSliderChange('safety', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="slider-container">
+                                <div className="slider-label">
+                                    <span>💰 Cost/Budget Importance</span>
+                                    <span>{preferences.cost.toFixed(1)}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={preferences.cost}
+                                    onChange={(e) => handleSliderChange('cost', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="slider-container">
+                                <div className="slider-label">
+                                    <span>👥 Social Experience Importance</span>
+                                    <span>{preferences.social.toFixed(1)}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={preferences.social}
+                                    onChange={(e) => handleSliderChange('social', e.target.value)}
+                                />
+                            </div>
+
+                            <div className="slider-container">
+                                <div className="slider-label">
+                                    <span>🛋️ Comfort Importance</span>
+                                    <span>{preferences.comfort.toFixed(1)}</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="5"
+                                    step="0.1"
+                                    value={preferences.comfort}
+                                    onChange={(e) => handleSliderChange('comfort', e.target.value)}
+                                />
+                            </div>
+
+                            <button
+                                className="get-recommendations-btn"
+                                onClick={getRecommendations}
+                                disabled={loading || !dataLoaded}
+                            >
+                                {loading ? 'Analyzing...' : dataLoaded ? 'Get Personalized Recommendations' : 'Loading City Data...'}
+                            </button>
+                        </div>
+
+                        {error && (
+                            <div className="error">
+                                {error}
+                            </div>
+                        )}
+
+                        {loading && (
+                            <div className="loading">
+                                🔄 Analyzing your preferences with real travel data...
+                            </div>
+                        )}
+
+                        {!loading && recommendations.length > 0 && (
+                            <div className="results-section">
+                                <div className="traveler-type">
+                                    <h3>Your Traveler Type</h3>
+                                    <p style={{fontSize: '1.3em', marginTop: '5px'}}>{travelerType}</p>
+                                </div>
+
+                                <h2 style={{marginBottom: '20px', color: '#667eea'}}>
+                                    Top Recommendations for You (Real Data)
+                                </h2>
+
+                                <div className="recommendations-grid">
+                                    {recommendations.map((rec, index) => (
+                                        <div key={index} className="city-card">
+                                            <div className="city-card-header">
+                                                <div className="city-name">{rec.city}</div>
+                                                <div className="overall-score">
+                                                    {rec.overall_score.toFixed(1)}
+                                                </div>
+                                            </div>
+
+                                            <div className="aspect-scores">
+                                                <div className="aspect-item">
+                                                    <span className="aspect-name">Safety</span>
+                                                    <span className="aspect-score">{rec.safety_score.toFixed(1)}</span>
+                                                </div>
+                                                <div className="aspect-item">
+                                                    <span className="aspect-name">Cost</span>
+                                                    <span className="aspect-score">{rec.cost_score.toFixed(1)}</span>
+                                                </div>
+                                                <div className="aspect-item">
+                                                    <span className="aspect-name">Social</span>
+                                                    <span className="aspect-score">{rec.social_score.toFixed(1)}</span>
+                                                </div>
+                                                <div className="aspect-item">
+                                                    <span className="aspect-name">Comfort</span>
+                                                    <span className="aspect-score">{rec.comfort_score.toFixed(1)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
