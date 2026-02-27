@@ -1,4 +1,5 @@
 # Minimal Requirements - Guaranteed to Work
+gunicorn
 pandas
 numpy
 matplotlib
