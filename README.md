@@ -50,10 +50,7 @@ Run git lfs pull after cloning.
 🚀 Installation & Local Setup
 Clone the Repository:
 
-Bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-Initialize Git LFS:
+
 
 Bash
 git lfs install
